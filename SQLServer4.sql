@@ -14,6 +14,7 @@ GO
 USE Academy;
 GO
 
+
 CREATE TABLE Faculties
 (
     Id INT IDENTITY PRIMARY KEY,
@@ -77,6 +78,7 @@ CREATE TABLE Lectures
     [Date] DATE NOT NULL CHECK ([Date] <= GETDATE()),
     SubjectId INT NOT NULL,
     TeacherId INT NOT NULL,
+    Week INT NOT NULL CHECK (Week BETWEEN 1 AND 52),
     CONSTRAINT FK_Lectures_Subjects
         FOREIGN KEY (SubjectId) REFERENCES Subjects(Id),
     CONSTRAINT FK_Lectures_Teachers
@@ -116,6 +118,70 @@ CREATE TABLE GroupsCurators
         FOREIGN KEY (GroupId) REFERENCES Groups(Id)
 );
 
+INSERT INTO Faculties (Name) VALUES
+('Computer Science'),
+('Economics');
+
+INSERT INTO Departments (Building, Financing, Name, FacultyId) VALUES
+(1, 150000, 'Software Development', 1),
+(2, 80000, 'Cyber Security', 1),
+(3, 200000, 'Finance', 2);
+
+INSERT INTO Teachers (IsProfessor, Name, Salary, Surname) VALUES
+(1, 'John', 5000, 'Smith'),
+(1, 'Alice', 6000, 'Brown'),
+(0, 'Mark', 7000, 'Wilson'),
+(0, 'Emma', 3000, 'Taylor');
+
+INSERT INTO Subjects (Name) VALUES
+('Databases'),
+('Algorithms'),
+('Networks');
+
+INSERT INTO Groups (Name, Year, DepartmentId) VALUES
+('D221', 5, 1),
+('D222', 5, 1),
+('C101', 3, 2);
+
+INSERT INTO Curators (Name, Surname) VALUES
+('Olga', 'Ivanova'),
+('Petr', 'Petrov');
+
+INSERT INTO Students (Name, Rating, Surname) VALUES
+('A',5,'A'),
+('B',4,'B'),
+('C',3,'C'),
+('D',5,'D'),
+('E',2,'E');
+
+INSERT INTO GroupsStudents (GroupId, StudentId) VALUES
+(1,1),(1,2),
+(2,3),(2,4),
+(3,5);
+
+INSERT INTO GroupsCurators (CuratorId, GroupId) VALUES
+(1,1),
+(2,1),
+(1,2);
+
+INSERT INTO Lectures ([Date], SubjectId, TeacherId, Week) VALUES
+(GETDATE(),1,1,1),
+(GETDATE(),1,1,1),
+(GETDATE(),1,1,1),
+(GETDATE(),2,3,1),
+(GETDATE(),2,3,1),
+(GETDATE(),2,3,1),
+(GETDATE(),2,3,1),
+(GETDATE(),2,3,1),
+(GETDATE(),2,3,1),
+(GETDATE(),2,3,1),
+(GETDATE(),2,3,1),
+(GETDATE(),2,3,1),
+(GETDATE(),3,4,1);
+
+INSERT INTO GroupsLectures (GroupId, LectureId)
+SELECT 2, Id FROM Lectures;
+
 SELECT Building
 FROM Departments
 GROUP BY Building
@@ -124,20 +190,24 @@ HAVING SUM(Financing) > 100000;
 SELECT g.Name
 FROM Groups g
 WHERE g.Year = 5
-AND g.DepartmentId = (
+AND g.DepartmentId =
+(
     SELECT Id FROM Departments
     WHERE Name = 'Software Development'
 )
-AND (
+AND
+(
     SELECT COUNT(*)
     FROM GroupsLectures gl
     JOIN Lectures l ON gl.LectureId = l.Id
     WHERE gl.GroupId = g.Id
+    AND l.Week = 1
 ) > 10;
 
 SELECT g.Name
 FROM Groups g
-WHERE (
+WHERE
+(
     SELECT AVG(s.Rating)
     FROM GroupsStudents gs
     JOIN Students s ON gs.StudentId = s.Id
@@ -148,7 +218,8 @@ WHERE (
     SELECT AVG(s.Rating)
     FROM GroupsStudents gs
     JOIN Students s ON gs.StudentId = s.Id
-    WHERE gs.GroupId = (
+    WHERE gs.GroupId =
+    (
         SELECT Id FROM Groups WHERE Name = 'D221'
     )
 );
@@ -164,7 +235,8 @@ WHERE Salary >
 
 SELECT g.Name
 FROM Groups g
-WHERE (
+WHERE
+(
     SELECT COUNT(*)
     FROM GroupsCurators gc
     WHERE gc.GroupId = g.Id
@@ -172,7 +244,8 @@ WHERE (
 
 SELECT g.Name
 FROM Groups g
-WHERE (
+WHERE
+(
     SELECT AVG(s.Rating)
     FROM GroupsStudents gs
     JOIN Students s ON gs.StudentId = s.Id
@@ -194,7 +267,8 @@ WHERE (
 
 SELECT f.Name
 FROM Faculties f
-WHERE (
+WHERE
+(
     SELECT SUM(d.Financing)
     FROM Departments d
     WHERE d.FacultyId = f.Id
@@ -203,7 +277,8 @@ WHERE (
 (
     SELECT SUM(d.Financing)
     FROM Departments d
-    WHERE d.FacultyId = (
+    WHERE d.FacultyId =
+    (
         SELECT Id FROM Faculties WHERE Name = 'Computer Science'
     )
 );
